@@ -1,8 +1,7 @@
 ﻿
-// ---------------- Dispatcher ----------------
 public sealed class Dispatcher(Elevator[] cars)
 {
-    private readonly HashSet<(int floor, Direction dir)> pending = new();
+    private readonly HashSet<(int floor, Direction direction)> pending = new();
 
     public void MoveUp(int floor)
     {
@@ -27,28 +26,28 @@ public sealed class Dispatcher(Elevator[] cars)
         if (car != null)
         {
             car.CarSelect(destination);
-            // PressCar logs internally as well
         }
     }
 
     public void Dispatch()
     {
         if (pending.Count == 0) return;
-        var assigned = new List<(int floor, Direction dir)>();
+        var assigned = new List<(int floor, Direction direction)>();
         foreach (var p in pending)
         {
-            var (idx, _) = cars
-                .Select((c, i) => (i, score: Math.Abs(c.CurrentFloor - p.floor)))
+            var (i, _) = cars
+                .Select((car, i) => (i, score: Math.Abs(car.CurrentFloor - p.floor)))
                 .OrderBy(t => t.score).First();
-            cars[idx].AssignPickup(p.floor, p.dir);
-            Log.Add($"Assigned floor {p.floor} ({(p.dir == Direction.Up ? "↑" : "↓")}) to Car#{cars[idx].Id}");
+
+            cars[i].AssignPickup(p.floor, p.direction);
+
+            Log.Add($"Assigned floor {p.floor} ({(p.direction == Direction.Up ? "↑" : "↓")}) to Car#{cars[i].Id}");
             assigned.Add(p);
         }
+
         foreach (var a in assigned)
         {
             pending.Remove(a);
         }
     }
-
-    public string Snapshot() => $"HallCalls: [{string.Join(" ", pending.Select(p => $"{p.floor}{(p.dir == Direction.Up ? "↑" : "↓")}"))}]";
 }

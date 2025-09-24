@@ -4,14 +4,13 @@ var cts = new CancellationTokenSource();
 var cars = new[]
 {
     new Elevator(1, 1),
-    new Elevator(2, 2),
+    new Elevator(2, 10),
     new Elevator(3, 3),
-    new Elevator(4, 4),
+    new Elevator(4, 6),
 };
 
 var dispatcher = new Dispatcher(cars);
 
-// Dispatch loop
 _ = Task.Run(async () =>
 {
     while (!cts.IsCancellationRequested)
@@ -21,7 +20,6 @@ _ = Task.Run(async () =>
     }
 });
 
-// Car loops
 foreach (var car in cars)
 {
     _ = Task.Run(async () =>
@@ -33,14 +31,11 @@ foreach (var car in cars)
     });
 }
 
-// Console dashboard + log tail
 while (!cts.IsCancellationRequested)
 {
     Console.Clear();
     Console.WriteLine("Elevator (4 cars, 10 floors, 10s/floor travel, 10s dwell)");
-    Console.WriteLine("Rule: keep direction while onboard targets remain ahead; no ping-ponging.");
     Console.WriteLine(new string('-', 78));
-    Console.WriteLine(dispatcher.Snapshot());
 
     foreach (var car in cars)
     {
@@ -60,7 +55,6 @@ while (!cts.IsCancellationRequested)
         Console.WriteLine(line);
     }
 
-    // Non-blocking input window
     var start = DateTime.UtcNow;
     while ((DateTime.UtcNow - start).TotalMilliseconds < 900)
     {
@@ -71,6 +65,6 @@ while (!cts.IsCancellationRequested)
             Command.Parse(line, dispatcher);
             break;
         }
-        await Task.Delay(500, cts.Token);
+        await Task.Delay(50, cts.Token);
     }
 }
