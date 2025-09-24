@@ -20,7 +20,7 @@ public sealed class Elevator
     private readonly SortedSet<int> pickUpUp = new();
     private readonly SortedSet<int> pickUpDown = new();
 
-    private readonly object _lock = new();
+    Lock _lock = new();
 
     public Elevator(int id, int startFloor)
     {
@@ -33,7 +33,7 @@ public sealed class Elevator
     public void CarSelect(int floor)
     {
         if (floor < MinFloor || floor > MaxFloor) return;
-        lock (_lock)
+        using (_lock.EnterScope())
         {
             if (floor > CurrentFloor)
             {
@@ -67,7 +67,7 @@ public sealed class Elevator
     public void AssignPickup(int floor, Direction dir)
     {
         if (floor < MinFloor || floor > MaxFloor) return;
-        lock (_lock)
+        using (_lock.EnterScope())
         {
             if (dir == Direction.Up && floor < MaxFloor)
             {
@@ -96,7 +96,7 @@ public sealed class Elevator
     {
         if (ct.IsCancellationRequested) return;
 
-        lock (_lock)
+        using (_lock.EnterScope())
         {
             if (State == EState.Idle && !HasOnboardLocked() && (pickUpUp.Count > 0 || pickUpDown.Count > 0))
             {
@@ -210,14 +210,15 @@ public sealed class Elevator
             case EState.Stopped:
                 Log.Add($"Car#{Id} stop at {CurrentFloor} (board/alight)");
                 await Task.Delay(Dwell, ct);
-                lock (_lock)
+                using (_lock.EnterScope())
                 {
                     carUp.Remove(CurrentFloor);
                     carDown.Remove(CurrentFloor);
                     if (Direction == Direction.Up) pickUpUp.Remove(CurrentFloor);
                     if (Direction == Direction.Down) pickUpDown.Remove(CurrentFloor);
                 }
-                lock (_lock)
+                
+                using (_lock.EnterScope())
                 {
                     if (Direction == Direction.Up && AnyOnboardAbove()) 
                     { 
@@ -269,7 +270,7 @@ public sealed class Elevator
 
     private bool ShouldStopHere(Direction moving)
     {
-        lock (_lock)
+        using (_lock.EnterScope())
         {
             if (carUp.Contains(CurrentFloor) || carDown.Contains(CurrentFloor)) return true;
             if (moving == Direction.Up && pickUpUp.Contains(CurrentFloor)) return true;
@@ -297,7 +298,7 @@ public sealed class Elevator
 
     public string Snapshot()
     {
-        lock (_lock)
+        using (_lock.EnterScope())
         {
             string cu = string.Join(",", carUp);
             string cd = string.Join(",", carDown.Reverse());
