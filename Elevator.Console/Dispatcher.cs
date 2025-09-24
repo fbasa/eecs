@@ -4,7 +4,7 @@ public sealed class Dispatcher(Elevator[] cars)
 {
     private readonly HashSet<(int floor, Direction dir)> pending = new();
 
-    public void HallCallUp(int floor)
+    public void MoveUp(int floor)
     {
         if (floor >= Elevator.MinFloor && floor < Elevator.MaxFloor)
         {
@@ -12,7 +12,7 @@ public sealed class Dispatcher(Elevator[] cars)
             Log.Add($"UP request on floor {floor} received");
         }
     }
-    public void HallCallDown(int floor)
+    public void MoveDown(int floor)
     {
         if (floor > Elevator.MinFloor && floor <= Elevator.MaxFloor)
         {
@@ -21,12 +21,12 @@ public sealed class Dispatcher(Elevator[] cars)
         }
     }
 
-    public void CarButton(int carId, int destination)
+    public void CarSelect(int carId, int destination)
     {
         var car = cars.FirstOrDefault(c => c.Id == carId);
         if (car != null)
         {
-            car.Move(destination);
+            car.CarSelect(destination);
             // PressCar logs internally as well
         }
     }

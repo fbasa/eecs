@@ -29,8 +29,8 @@ public sealed class Elevator
         Log.Add($"Car#{Id} initialized at floor {CurrentFloor}");
     }
 
-    // Car buttons (destinations) – represent onboard passengers
-    public void Move(int floor)
+    // Car select (destinations) – represent onboard passengers
+    public void CarSelect(int floor)
     {
         if (floor < MinFloor || floor > MaxFloor) return;
         lock (_lock)

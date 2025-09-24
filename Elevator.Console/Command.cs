@@ -11,14 +11,14 @@
             switch (parts[0].ToLowerInvariant())
             {
                 case "u":
-                    if (parts.Length >= 2 && int.TryParse(parts[1], out var fu)) dispatcher.HallCallUp(fu);
+                    if (parts.Length >= 2 && int.TryParse(parts[1], out var fu)) dispatcher.MoveUp(fu);
                     break;
                 case "d":
-                    if (parts.Length >= 2 && int.TryParse(parts[1], out var fd)) dispatcher.HallCallDown(fd);
+                    if (parts.Length >= 2 && int.TryParse(parts[1], out var fd)) dispatcher.MoveDown(fd);
                     break;
                 case "c":
                     if (parts.Length >= 3 && int.TryParse(parts[1], out var car) && int.TryParse(parts[2], out var fc))
-                        dispatcher.CarButton(car, fc);
+                        dispatcher.CarSelect(car, fc);
                     break;
                 default:
                     Log.Add($"Unknown command: {string.Join(' ', parts)}");
