@@ -1,5 +1,4 @@
-﻿
-var cts = new CancellationTokenSource();
+﻿var cts = new CancellationTokenSource();
 
 var cars = new[]
 {
@@ -26,7 +25,7 @@ foreach (var car in cars)
     {
         while (!cts.IsCancellationRequested)
         {
-            await car.StepAsync(cts.Token);
+            await car.HandleStateAsync(cts.Token);
         }
     });
 }
@@ -62,7 +61,7 @@ while (!cts.IsCancellationRequested)
         {
             var line = Console.ReadLine();
             if (line == null) break;
-            Command.Parse(line, dispatcher);
+            Command.Validate(line, dispatcher);
             break;
         }
         await Task.Delay(50, cts.Token);

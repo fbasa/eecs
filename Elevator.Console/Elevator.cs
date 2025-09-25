@@ -1,4 +1,4 @@
-﻿public sealed class Elevator
+public sealed class Elevator
 {
     public readonly int Id;
     public const int MinFloor = 1, MaxFloor = 10;
@@ -37,8 +37,6 @@
 
     public void CarSelect(int floor)
     {
-        if (floor < MinFloor || floor > MaxFloor) return;
-
         using (_lock.EnterScope())
         {
             if (floor > CurrentFloor)
@@ -71,16 +69,13 @@
 
     public void AssignPickup(int floor, Direction dir)
     {
-        if (floor < MinFloor || floor > MaxFloor) return;
-
         using (_lock.EnterScope())
         {
-            if (dir == Direction.Up && floor < MaxFloor)
+            if (dir == Direction.Up)
             {
                 pickUpUp.Add(floor);
             }
-
-            if (dir == Direction.Down && floor > MinFloor)
+            else if (dir == Direction.Down)
             {
                 pickUpDown.Add(floor);
             }
@@ -97,7 +92,7 @@
     }
 
 
-    public async Task StepAsync(CancellationToken ct)
+    public async Task HandleStateAsync(CancellationToken ct)
     {
         if (ct.IsCancellationRequested) return;
 
@@ -144,43 +139,43 @@
     {
         using (_lock.EnterScope())
         {
-            if (Direction == Direction.Up && AnyOnboardAbove())
+            var nextDirection = Direction.None;
+
+            var onboardAbove = AnyOnboardAbove();
+            var onboardBelow = AnyOnboardBelow();
+
+            if (Direction == Direction.Up && onboardAbove)
             {
-                ElevatorState = ElevatorState.MovingUp;
+                nextDirection = Direction.Up;
             }
-            else if (Direction == Direction.Down && AnyOnboardBelow())
+            else if (Direction == Direction.Down && onboardBelow)
             {
-                ElevatorState = ElevatorState.MovingDown;
+                nextDirection = Direction.Down;
             }
-            else if (AnyOnboardAbove())
+            else if (onboardAbove)
             {
-                Direction = Direction.Up;
-                ElevatorState = ElevatorState.MovingUp;
+                nextDirection = Direction.Up;
             }
-            else if (AnyOnboardBelow())
+            else if (onboardBelow)
             {
-                Direction = Direction.Down;
-                ElevatorState = ElevatorState.MovingDown;
-            }
-            else if (HasPickups())
-            {
-                var pickup = NearestPickup();
-                if (pickup == null)
-                {
-                    Direction = Direction.None;
-                    ElevatorState = ElevatorState.Idle;
-                }
-                else
-                {
-                    Direction = pickup > CurrentFloor ? Direction.Up : Direction.Down;
-                    ElevatorState = Direction == Direction.Up ? ElevatorState.MovingUp : ElevatorState.MovingDown;
-                }
+                nextDirection = Direction.Down;
             }
             else
             {
-                Direction = Direction.None;
-                ElevatorState = ElevatorState.Idle;
+                var pickup = NearestPickup();
+                if (pickup != null)
+                {
+                    nextDirection = pickup > CurrentFloor ? Direction.Up : Direction.Down;
+                }
             }
+
+            Direction = nextDirection;
+            ElevatorState = nextDirection switch
+            {
+                Direction.Up => ElevatorState.MovingUp,
+                Direction.Down => ElevatorState.MovingDown,
+                _ => ElevatorState.Idle
+            };
         }
     }
 

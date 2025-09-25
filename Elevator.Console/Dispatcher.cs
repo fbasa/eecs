@@ -1,4 +1,3 @@
-﻿
 public sealed class Dispatcher(Elevator[] cars)
 {
     private readonly HashSet<(int floor, Direction direction)> pending = new();
@@ -28,6 +27,8 @@ public sealed class Dispatcher(Elevator[] cars)
             car.CarSelect(destination);
         }
     }
+
+    public bool HasCar(int carId) => cars.Any(c => c.Id == carId);
 
     public void Dispatch()
     {
