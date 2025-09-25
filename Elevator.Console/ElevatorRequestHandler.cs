@@ -3,16 +3,9 @@
 /// </summary>
 internal sealed class ElevatorRequestHandler
 {
-    //Holds the confirmed Up from passengers already onboard
-    private readonly SortedSet<int> carUp = new();    
-
-    //Holds the confirmed Down from passengers already onboard
+    private readonly SortedSet<int> carUp = new();
     private readonly SortedSet<int> carDown = new();
-
-    //Holds pending Up requests that still need to be picked up
     private readonly SortedSet<int> pickUpUp = new();
-
-    //Holds pending Down requests that still need to be picked up
     private readonly SortedSet<int> pickUpDown = new();
 
     public void AddOnboard(int floor, int currentFloor)
@@ -53,12 +46,16 @@ internal sealed class ElevatorRequestHandler
     }
 
     public bool HasOnboard() => carUp.Count > 0 || carDown.Count > 0;
-
-    public bool AnyOnboardAbove(int currentFloor) => carUp.Count > 0 && carUp.Min > currentFloor;
-
-    public bool AnyOnboardBelow(int currentFloor) => carDown.Count > 0 && carDown.Max < currentFloor;
-
     public bool HasPickups() => pickUpUp.Count > 0 || pickUpDown.Count > 0;
+
+    public bool AnyOnboardAbove(int currentFloor) => HasAbove(carUp, currentFloor);
+    public bool AnyOnboardBelow(int currentFloor) => HasBelow(carDown, currentFloor);
+
+    public bool HasPickupAbove(int currentFloor) => HasAbove(pickUpUp, currentFloor) || HasAbove(pickUpDown, currentFloor);
+    public bool HasPickupBelow(int currentFloor) => HasBelow(pickUpUp, currentFloor) || HasBelow(pickUpDown, currentFloor);
+
+    public bool HasTargetsAbove(int currentFloor) => AnyOnboardAbove(currentFloor) || HasPickupAbove(currentFloor);
+    public bool HasTargetsBelow(int currentFloor) => AnyOnboardBelow(currentFloor) || HasPickupBelow(currentFloor);
 
     public bool ShouldStopAt(int floor, Direction moving)
     {
@@ -90,22 +87,41 @@ internal sealed class ElevatorRequestHandler
 
     public Direction DetermineNextDirection(Direction currentDirection, int currentFloor)
     {
-        var onboardAbove = AnyOnboardAbove(currentFloor);
-        var onboardBelow = AnyOnboardBelow(currentFloor);
+        var targetsAbove = HasTargetsAbove(currentFloor);
+        var targetsBelow = HasTargetsBelow(currentFloor);
 
-        if (currentDirection == Direction.Up && onboardAbove) return Direction.Up;
-        if (currentDirection == Direction.Down && onboardBelow) return Direction.Down;
-        if (onboardAbove) return Direction.Up;
-        if (onboardBelow) return Direction.Down;
+        if (currentDirection == Direction.Up && targetsAbove) return Direction.Up;
+        if (currentDirection == Direction.Down && targetsBelow) return Direction.Down;
 
-        var pickup = NearestPickup(currentFloor);
-        if (pickup.HasValue)
+        if (targetsAbove && !targetsBelow) return Direction.Up;
+        if (targetsBelow && !targetsAbove) return Direction.Down;
+
+        if (!targetsAbove && !targetsBelow)
+            return Direction.None;
+
+        var nextOnboard = NearestOnboard(currentFloor);
+        var nextPickup = NearestPickup(currentFloor);
+
+        int? candidate = null;
+        if (nextOnboard.HasValue && nextPickup.HasValue)
         {
-            return pickup.Value > currentFloor ? Direction.Up : Direction.Down;
+            var onboardDistance = Math.Abs(nextOnboard.Value - currentFloor);
+            var pickupDistance = Math.Abs(nextPickup.Value - currentFloor);
+            candidate = onboardDistance <= pickupDistance ? nextOnboard : nextPickup;
+        }
+        else
+        {
+            candidate = nextOnboard ?? nextPickup;
         }
 
-        return Direction.None;
+        if (!candidate.HasValue)
+            return Direction.None;
+
+        return candidate.Value > currentFloor ? Direction.Up : Direction.Down;
     }
+
+    private static bool HasAbove(SortedSet<int> floors, int currentFloor) => floors.Count > 0 && floors.Max > currentFloor;
+    private static bool HasBelow(SortedSet<int> floors, int currentFloor) => floors.Count > 0 && floors.Min < currentFloor;
 }
 
 

@@ -1,5 +1,5 @@
 public sealed class Elevator
-{    
+{
     public readonly int Id;
     public int CurrentFloor { get; internal set; }
     public Direction Direction { get; internal set; } = Direction.None;
@@ -8,7 +8,6 @@ public sealed class Elevator
     private readonly ElevatorRequestHandler RequestHandler = new();
     private readonly Lock _lock = new();
     private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
-
 
     public Elevator(int id, int startFloor)
     {
@@ -52,7 +51,7 @@ public sealed class Elevator
         {
             if (direction == Direction.None)
             {
-                Log.Add($"Car has no direction.");
+                Log.Add("Car has no direction.");
                 return;
             }
 
@@ -69,8 +68,6 @@ public sealed class Elevator
     /// <summary>
     /// Advancing the car one step and triggering state transitions
     /// </summary>
-    /// <param name="ct"></param>
-    /// <returns></returns>
     public async Task AdvanceAsync(CancellationToken ct)
     {
         if (ct.IsCancellationRequested) return;
@@ -78,9 +75,12 @@ public sealed class Elevator
         if (IsIdle && !RequestHandler.HasOnboard() && RequestHandler.HasPickups())
         {
             var target = RequestHandler.NearestPickup(CurrentFloor);
-            Direction = target > CurrentFloor ? Direction.Up : Direction.Down;
-            TransitionTo(Direction);
-            Log.Add($"Car#{Id} leaving Idle to go {Direction} toward pickup at floor {target}");
+            if (target.HasValue)
+            {
+                Direction = target.Value > CurrentFloor ? Direction.Up : Direction.Down;
+                TransitionTo(Direction);
+                Log.Add($"Car#{Id} leaving Idle to go {Direction} toward pickup at floor {target.Value}");
+            }
         }
 
         await CurrentState.HandleStateAsync(this, ct);
@@ -126,12 +126,9 @@ public sealed class Elevator
     }
 
     internal void TransitionToIdle() => TransitionTo(IdleElevatorState.Instance);
-
     internal void TransitionToStopped() => TransitionTo(StoppedElevatorState.Instance);
-
-    internal bool AnyOnboardAbove() => RequestHandler.AnyOnboardAbove(CurrentFloor);
-    internal bool AnyOnboardBelow() => RequestHandler.AnyOnboardBelow(CurrentFloor);
-    internal bool HasPickups() => RequestHandler.HasPickups();
+    internal bool HasTargetsAbove() => RequestHandler.HasTargetsAbove(CurrentFloor);
+    internal bool HasTargetsBelow() => RequestHandler.HasTargetsBelow(CurrentFloor);
 
     internal bool ShouldStopHere(Direction moving)
     {
@@ -140,8 +137,6 @@ public sealed class Elevator
             return RequestHandler.ShouldStopAt(CurrentFloor, moving);
         }
     }
-
-    internal int? NearestPickup() => RequestHandler.NearestPickup(CurrentFloor);
 
     public string Snapshot()
     {
