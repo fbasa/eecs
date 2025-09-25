@@ -2,10 +2,10 @@
 
 var cars = new[]
 {
-    new Elevator(1, 1),
-    new Elevator(2, 10),
-    new Elevator(3, 3),
-    new Elevator(4, 6),
+    new Elevator(1, 8),
+    new Elevator(2, 6),
+    new Elevator(3, 7),
+    new Elevator(4, 9),
 };
 
 var dispatcher = new Dispatcher(cars);
@@ -17,7 +17,16 @@ StartElevators(cts, cars);
 await StartDashboardAsync(cts, cars, dispatcher);
 
 
-
+//-------------------Commands Sample---------------------------------//
+// Let say passenger is in 1st floor and is going to 9th floor
+// u 1     -> call for "Up", say car 2 (nearest) will go down to 1st floor for pickup, if car 2 is in 6th floor, 5 x 10s = 50s waiting time
+// c 2 9   -> next instruct car 2 to go to floor 9
+//
+//
+// Let say passenger is in 10th floor and wants to go down to 5th floor
+// d 10     -> call for "Down", say car 4 (nearest) will go up to 10th floor for pickup
+// c 4 5    -> next instruct car 4 to go to floor 5
+//-------------------------------------------------------------------//
 
 static void StartDispatcher(CancellationTokenSource cts, Dispatcher dispatcher)
 {
