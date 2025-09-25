@@ -1,5 +1,5 @@
 
-internal sealed class ElevatorStops
+internal sealed class ElevatorRequestHandler
 {
     private readonly SortedSet<int> carUp = new();    // > current floor
     private readonly SortedSet<int> carDown = new();  // < current floor

@@ -1,19 +1,16 @@
 public sealed class Elevator
 {    
     public readonly int Id;
-
     public int CurrentFloor { get; internal set; }
-
     public Direction Direction { get; internal set; } = Direction.None;
     internal IElevatorState CurrentState { get; private set; }
     internal ElevatorOptions Settings => ElevatorOptions.Default;
-    private readonly ElevatorStops stops = new();
-
+    private readonly ElevatorRequestHandler RequestHandler = new();
     private readonly Lock _lock = new();
-
     private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
 
-     public Elevator(int id, int startFloor)
+
+    public Elevator(int id, int startFloor)
     {
         Id = id;
         CurrentFloor = startFloor;
@@ -26,13 +23,13 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            stops.AddOnboard(floor, CurrentFloor);
+            RequestHandler.AddOnboard(floor, CurrentFloor);
 
-            Log.Add($"Car#{Id} destination {floor} added");
+            Log.Add($"Car#{Id} destination (floor {floor}) added");
 
             if (IsIdle)
             {
-                var next = NearestOnboard();
+                var next = RequestHandler.NearestOnboard(CurrentFloor);
                 if (next != null)
                 {
                     Direction = next > CurrentFloor ? Direction.Up : Direction.Down;
@@ -53,11 +50,11 @@ public sealed class Elevator
                 return;
             }
 
-            stops.AddPickup(floor, direction);
+            RequestHandler.AddPickup(floor, direction);
 
             Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(direction == Direction.Up ? "Up" : "Down")})");
 
-            if (IsIdle && !HasOnboardRequests())
+            if (IsIdle && !RequestHandler.HasOnboard())
             {
                 Direction = floor >= CurrentFloor ? Direction.Up : Direction.Down;
                 TransitionTo(Direction);
@@ -70,9 +67,9 @@ public sealed class Elevator
     {
         if (ct.IsCancellationRequested) return;
 
-        if (IsIdle && !HasOnboardRequests() && stops.HasPickups())
+        if (IsIdle && !RequestHandler.HasOnboard() && RequestHandler.HasPickups())
         {
-            var target = NearestPickup();
+            var target = RequestHandler.NearestPickup(CurrentFloor);
             Direction = target > CurrentFloor ? Direction.Up : Direction.Down;
             TransitionTo(Direction);
             Log.Add($"Car#{Id} leaving Idle to go {Direction} toward pickup at floor {target}");
@@ -85,7 +82,7 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            stops.ClearAt(CurrentFloor, Direction);
+            RequestHandler.ClearAt(CurrentFloor, Direction);
         }
     }
 
@@ -93,7 +90,7 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            var nextDirection = stops.DetermineNextDirection(Direction, CurrentFloor);
+            var nextDirection = RequestHandler.DetermineNextDirection(Direction, CurrentFloor);
 
             Direction = nextDirection;
             TransitionTo(nextDirection);
@@ -110,7 +107,7 @@ public sealed class Elevator
         });
     }
 
-    internal void TransitionTo(IElevatorState state)
+    private void TransitionTo(IElevatorState state)
     {
         if (state is null)
         {
@@ -124,25 +121,19 @@ public sealed class Elevator
 
     internal void TransitionToStopped() => TransitionTo(StoppedElevatorState.Instance);
 
-
-
-    // Helpers
-    private bool HasOnboardRequests() => stops.HasOnboard();
-    internal bool AnyOnboardAbove() => stops.AnyOnboardAbove(CurrentFloor);
-    internal bool AnyOnboardBelow() => stops.AnyOnboardBelow(CurrentFloor);
-    internal bool HasPickups() => stops.HasPickups();
+    internal bool AnyOnboardAbove() => RequestHandler.AnyOnboardAbove(CurrentFloor);
+    internal bool AnyOnboardBelow() => RequestHandler.AnyOnboardBelow(CurrentFloor);
+    internal bool HasPickups() => RequestHandler.HasPickups();
 
     internal bool ShouldStopHere(Direction moving)
     {
         using (_lock.EnterScope())
         {
-            return stops.ShouldStopAt(CurrentFloor, moving);
+            return RequestHandler.ShouldStopAt(CurrentFloor, moving);
         }
     }
 
-    private int? NearestOnboard() => stops.NearestOnboard(CurrentFloor);
-
-    internal int? NearestPickup() => stops.NearestPickup(CurrentFloor);
+    internal int? NearestPickup() => RequestHandler.NearestPickup(CurrentFloor);
 
     public string Snapshot()
     {
