@@ -60,7 +60,7 @@ static async Task StartDashboardAsync(CancellationTokenSource cts, Elevator[] ca
     while (!cts.IsCancellationRequested)
     {
         Console.Clear();
-        Console.WriteLine("Elevator (4 cars, 10 floors, 10s/floor travel, 10s dwell)");
+        Console.WriteLine("Elementary Elevator (4 cars, 10 floors, 10s floor travel, 10s dwell)");
         Console.WriteLine(new string('-', 78));
 
         foreach (var car in cars)
