@@ -35,20 +35,19 @@ internal sealed class MovingUpElevatorState : IElevatorState
                 {
                     car.Direction = Direction.None;
                     car.TransitionToIdle();
-                    Log.Add($"Car#{car.Id} idling at floor pickup == null {car.CurrentFloor}");
+                    Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
                 }
                 else
                 {
                     car.Direction = pickup > car.CurrentFloor ? Direction.Up : Direction.Down;
                     car.TransitionTo(car.Direction);
-                    //Log.Add($"Car#{car.Id} heading {car.Direction} toward pickup at floor {pickup}");
                 }
             }
             else
             {
                 car.Direction = Direction.None;
                 car.TransitionToIdle();
-                Log.Add($"Car#{car.Id} idling at floor AnyOnboardAbove! {car.CurrentFloor}");
+                Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
             }
         }
     }
