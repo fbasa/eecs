@@ -37,8 +37,8 @@ public sealed class Dispatcher(Elevator[] cars)
         foreach (var request in pickupRequests)
         {
             var (i, _) = cars
-                .Select((car, i) => (i, score: Math.Abs(car.CurrentFloor - request.floor)))
-                .OrderBy(t => t.score).First();
+                .Select((car, i) => (i, distance: Math.Abs(car.CurrentFloor - request.floor)))
+                .OrderBy(t => t.distance).First();
 
             cars[i].AssignPickup(request.floor, request.direction);
 

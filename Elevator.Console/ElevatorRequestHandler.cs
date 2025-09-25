@@ -1,10 +1,18 @@
-
+/// <summary>
+/// The paired sets let the car treat committed destinations separately from requests waiting in the lobby.
+/// </summary>
 internal sealed class ElevatorRequestHandler
 {
-    private readonly SortedSet<int> carUp = new();    // > current floor
-    private readonly SortedSet<int> carDown = new();  // < current floor
+    //Holds the confirmed Up from passengers already onboard
+    private readonly SortedSet<int> carUp = new();    
 
+    //Holds the confirmed Down from passengers already onboard
+    private readonly SortedSet<int> carDown = new();
+
+    //Holds pending Up requests that still need to be picked up
     private readonly SortedSet<int> pickUpUp = new();
+
+    //Holds pending Down requests that still need to be picked up
     private readonly SortedSet<int> pickUpDown = new();
 
     public void AddOnboard(int floor, int currentFloor)
