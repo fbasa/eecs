@@ -4,11 +4,12 @@ public sealed class Elevator
     public const int MinFloor = 1, MaxFloor = 10;
     public int CurrentFloor { get; internal set; }
 
-    public readonly TimeSpan TravelPerFloor = TimeSpan.FromSeconds(10); 
-    public readonly TimeSpan Dwell = TimeSpan.FromSeconds(10);          
+    public readonly TimeSpan TravelPerFloor = TimeSpan.FromSeconds(10);
+    public readonly TimeSpan Dwell = TimeSpan.FromSeconds(10);
 
-    public ElevatorState ElevatorState { get; internal set; } = ElevatorState.Idle;
     public Direction Direction { get; internal set; } = Direction.None;
+    internal IElevatorState CurrentState { get; private set; }
+    public string StateName => CurrentState.Name;
 
     private readonly SortedSet<int> carUp = new();    // > CurrentFloor
     private readonly SortedSet<int> carDown = new();  // < CurrentFloor
@@ -16,23 +17,16 @@ public sealed class Elevator
     private readonly SortedSet<int> pickUpUp = new();
     private readonly SortedSet<int> pickUpDown = new();
 
-    Lock _lock = new();
+    private readonly Lock _lock = new();
 
-    private readonly IReadOnlyDictionary<ElevatorState, IElevatorState> elevatorStates;
-
+    private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
     public Elevator(int id, int startFloor)
     {
         Id = id;
         CurrentFloor = startFloor;
-        Log.Add($"Car#{Id} initialized at floor {CurrentFloor}");
+        CurrentState = IdleElevatorState.Instance;
 
-        elevatorStates = new Dictionary<ElevatorState, IElevatorState>
-        {
-            [ElevatorState.Idle] = new IdleElevatorState(),
-            [ElevatorState.MovingUp] = new MovingUpElevatorState(),
-            [ElevatorState.MovingDown] = new MovingDownElevatorState(),
-            [ElevatorState.Stopped] = new StoppedElevatorState()
-        };
+        Log.Add($"Car#{Id} initialized at floor {CurrentFloor}");
     }
 
     public void CarSelect(int floor)
@@ -54,74 +48,63 @@ public sealed class Elevator
 
             Log.Add($"Car#{Id}: destination {floor} added");
 
-            if (ElevatorState == ElevatorState.Idle)
+            if (IsIdle)
             {
                 var next = NearestOnboard();
                 if (next != null)
                 {
                     Direction = next > CurrentFloor ? Direction.Up : Direction.Down;
-                    ElevatorState = Direction == Direction.Up ? ElevatorState.MovingUp : ElevatorState.MovingDown;
+                    TransitionTo(Direction);
                     Log.Add($"Car#{Id} starting to move {Direction} from floor {CurrentFloor}");
                 }
             }
         }
     }
 
-    public void AssignPickup(int floor, Direction dir)
+    public void AssignPickup(int floor, Direction direction)
     {
         using (_lock.EnterScope())
         {
-            if (dir == Direction.Up)
+            if (direction == Direction.Up)
             {
                 pickUpUp.Add(floor);
             }
-            else if (dir == Direction.Down)
+            else if (direction == Direction.Down)
             {
                 pickUpDown.Add(floor);
             }
+            else
+            {
+                Log.Add($"Car has no direction.");
+                return;
+            }
             
-            Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(dir == Direction.Up ? "?" : "?")})");
+            Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(direction == Direction.Up ? "Up" : "Down")})");
 
-            if (ElevatorState == ElevatorState.Idle && !HasOnboardLocked())
+            if (IsIdle && !HasOnboardLocked())
             {
                 Direction = floor >= CurrentFloor ? Direction.Up : Direction.Down;
-                ElevatorState = Direction == Direction.Up ? ElevatorState.MovingUp : ElevatorState.MovingDown;
+                TransitionTo(Direction);
                 Log.Add($"Car#{Id} heading {Direction} toward pickup at floor {floor}");
             }
         }
     }
 
-
     public async Task HandleStateAsync(CancellationToken ct)
     {
         if (ct.IsCancellationRequested) return;
 
-        TryActivateFromIdleAssignments();
-
-        if (!elevatorStates.TryGetValue(ElevatorState, out var handler))
+        if (IsIdle && !HasOnboardLocked() 
+            && (pickUpUp.Count > 0 || pickUpDown.Count > 0)
+            )
         {
-            Log.Add($"No handler configured for state {ElevatorState}");
-            return;
+            var target = NearestPickup();
+            Direction = target > CurrentFloor ? Direction.Up : Direction.Down;
+            TransitionTo(Direction);
+            Log.Add($"Car#{Id} leaving Idle to go {Direction} toward pickup at floor {target}");
         }
 
-        await handler.HandleStateAsync(this, ct);
-    }
-
-    private void TryActivateFromIdleAssignments()
-    {
-        using (_lock.EnterScope())
-        {
-            if (ElevatorState == ElevatorState.Idle && !HasOnboardLocked() && (pickUpUp.Count > 0 || pickUpDown.Count > 0))
-            {
-                var target = NearestPickup();
-                if (target != null)
-                {
-                    Direction = target > CurrentFloor ? Direction.Up : Direction.Down;
-                    ElevatorState = Direction == Direction.Up ? ElevatorState.MovingUp : ElevatorState.MovingDown;
-                    Log.Add($"Car#{Id} leaving Idle to go {Direction} toward pickup at floor {target}");
-                }
-            }
-        }
+        await CurrentState.HandleStateAsync(this, ct);
     }
 
     internal void ClearCurrentFloorRequests()
@@ -130,8 +113,12 @@ public sealed class Elevator
         {
             carUp.Remove(CurrentFloor);
             carDown.Remove(CurrentFloor);
-            if (Direction == Direction.Up) pickUpUp.Remove(CurrentFloor);
-            if (Direction == Direction.Down) pickUpDown.Remove(CurrentFloor);
+
+            if (Direction == Direction.Up) 
+                pickUpUp.Remove(CurrentFloor);
+
+            if (Direction == Direction.Down) 
+                pickUpDown.Remove(CurrentFloor);
         }
     }
 
@@ -170,14 +157,35 @@ public sealed class Elevator
             }
 
             Direction = nextDirection;
-            ElevatorState = nextDirection switch
-            {
-                Direction.Up => ElevatorState.MovingUp,
-                Direction.Down => ElevatorState.MovingDown,
-                _ => ElevatorState.Idle
-            };
+            TransitionTo(nextDirection);
         }
     }
+
+    internal void TransitionTo(Direction direction)
+    {
+        TransitionTo(direction switch
+        {
+            Direction.Up => MovingUpElevatorState.Instance,
+            Direction.Down => MovingDownElevatorState.Instance,
+            _ => IdleElevatorState.Instance
+        });
+    }
+
+    internal void TransitionTo(IElevatorState state)
+    {
+        if (state is null)
+        {
+            Log.Add("Invalid state");
+            return;
+        }
+        CurrentState = state;
+    }
+
+    internal void TransitionToIdle() => TransitionTo(IdleElevatorState.Instance);
+
+    internal void TransitionToStopped() => TransitionTo(StoppedElevatorState.Instance);
+
+
 
     // Helpers
     private bool HasOnboardLocked() => carUp.Count > 0 || carDown.Count > 0;
@@ -221,8 +229,7 @@ public sealed class Elevator
             string cd = string.Join(",", carDown.Reverse());
             string pu = string.Join(",", pickUpUp);
             string pd = string.Join(",", pickUpDown.Reverse());
-            return $"Car#{Id} F={CurrentFloor} {ElevatorState} Dir={Direction} | Onboard(?:{cu} ?:{cd}) Pickups(?:{pu} ?:{pd})";
+            return $"Car#{Id} F={CurrentFloor} {StateName} Dir={Direction} | Onboard(U:{cu} D:{cd}) Pickups(U:{pu} D:{pd})";
         }
     }
 }
-

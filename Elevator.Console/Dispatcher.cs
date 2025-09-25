@@ -2,29 +2,19 @@ public sealed class Dispatcher(Elevator[] cars)
 {
     private readonly HashSet<(int floor, Direction direction)> pending = new();
 
-    public void MoveUp(int floor)
+    public void Move(int floor, Direction direction)
     {
-        if (floor >= Elevator.MinFloor && floor < Elevator.MaxFloor)
-        {
-            pending.Add((floor, Direction.Up));
-            Log.Add($"UP request on floor {floor} received");
-        }
-    }
-    public void MoveDown(int floor)
-    {
-        if (floor > Elevator.MinFloor && floor <= Elevator.MaxFloor)
-        {
-            pending.Add((floor, Direction.Down));
-            Log.Add($"DOWN request on floor {floor} received");
-        }
+        pending.Add((floor, direction));
+        var label = direction == Direction.Up ? "UP" : "DOWN";
+        Log.Add($"{label} request on floor {floor} received");
     }
 
-    public void CarSelect(int carId, int destination)
+    public void CarSelect(int carId, int floor)
     {
         var car = cars.FirstOrDefault(c => c.Id == carId);
         if (car != null)
         {
-            car.CarSelect(destination);
+            car.CarSelect(floor);
         }
     }
 
@@ -42,7 +32,8 @@ public sealed class Dispatcher(Elevator[] cars)
 
             cars[i].AssignPickup(p.floor, p.direction);
 
-            Log.Add($"Assigned floor {p.floor} ({(p.direction == Direction.Up ? "↑" : "↓")}) to Car#{cars[i].Id}");
+            var label = p.direction == Direction.Up ? "UP" : "DOWN";
+            Log.Add($"Assigned floor {p.floor} ({label}) to Car#{cars[i].Id}");
             assigned.Add(p);
         }
 

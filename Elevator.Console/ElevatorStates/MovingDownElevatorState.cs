@@ -1,5 +1,13 @@
 internal sealed class MovingDownElevatorState : IElevatorState
 {
+    public static MovingDownElevatorState Instance { get; } = new();
+
+    public string Name => "MovingDown";
+
+    private MovingDownElevatorState()
+    {
+    }
+
     public async Task HandleStateAsync(Elevator car, CancellationToken token)
     {
         await Task.Delay(car.TravelPerFloor, token);
@@ -10,7 +18,7 @@ internal sealed class MovingDownElevatorState : IElevatorState
 
         if (car.ShouldStopHere(Direction.Down))
         {
-            car.ElevatorState = ElevatorState.Stopped;
+            car.TransitionToStopped();
             return;
         }
 
@@ -19,7 +27,7 @@ internal sealed class MovingDownElevatorState : IElevatorState
             if (car.AnyOnboardAbove())
             {
                 car.Direction = Direction.Up;
-                car.ElevatorState = ElevatorState.MovingUp;
+                car.TransitionTo(Direction.Up);
                 Log.Add($"Car#{car.Id} reversing to Up (no more onboard down-targets)");
             }
             else if (car.HasPickups())
@@ -28,20 +36,20 @@ internal sealed class MovingDownElevatorState : IElevatorState
                 if (pickup == null)
                 {
                     car.Direction = Direction.None;
-                    car.ElevatorState = ElevatorState.Idle;
+                    car.TransitionToIdle();
                     Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
                 }
                 else
                 {
                     car.Direction = pickup > car.CurrentFloor ? Direction.Up : Direction.Down;
-                    car.ElevatorState = car.Direction == Direction.Up ? ElevatorState.MovingUp : ElevatorState.MovingDown;
+                    car.TransitionTo(car.Direction);
                     Log.Add($"Car#{car.Id} heading {car.Direction} toward pickup at floor {pickup}");
                 }
             }
             else
             {
                 car.Direction = Direction.None;
-                car.ElevatorState = ElevatorState.Idle;
+                car.TransitionToIdle();
                 Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
             }
         }

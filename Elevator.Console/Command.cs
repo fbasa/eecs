@@ -27,7 +27,7 @@ public static class Command
                         break;
                     }
 
-                    dispatcher.MoveUp(upFloor);
+                    dispatcher.Move(upFloor, Direction.Up);
                     break;
 
                 case "d":
@@ -45,7 +45,7 @@ public static class Command
                         break;
                     }
 
-                    dispatcher.MoveDown(downFloor);
+                    dispatcher.Move(downFloor,Direction.Down);
                     break;
 
                 case "c":
@@ -56,7 +56,7 @@ public static class Command
                     }
 
                     if (!TryParseInt(parts[1], "car id", out var carId)) break;
-                    if (!TryParseInt(parts[2], "destination floor", out var destination)) break;
+                    if (!TryParseInt(parts[2], "destination floor", out var target)) break;
 
                     if (!dispatcher.HasCar(carId))
                     {
@@ -64,13 +64,13 @@ public static class Command
                         break;
                     }
 
-                    if (destination < Elevator.MinFloor || destination > Elevator.MaxFloor)
+                    if (target < Elevator.MinFloor || target > Elevator.MaxFloor)
                     {
-                        Log.Add($"Floor {destination} is out of range ({Elevator.MinFloor}-{Elevator.MaxFloor}).");
+                        Log.Add($"Floor {target} is out of range ({Elevator.MinFloor}-{Elevator.MaxFloor}).");
                         break;
                     }
 
-                    dispatcher.CarSelect(carId, destination);
+                    dispatcher.CarSelect(carId, target);
                     break;
 
                 default:
