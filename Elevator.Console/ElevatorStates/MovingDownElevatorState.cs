@@ -8,17 +8,17 @@ internal sealed class MovingDownElevatorState : IElevatorState
 
     public async Task HandleStateAsync(Elevator car, CancellationToken token)
     {
-        if (car.ShouldStopHere(Direction.Down))
-        {
-            car.TransitionToStopped();
-            return;
-        }
-
         await Task.Delay(car.Settings.TravelPerFloor, token);
 
         car.CurrentFloor = Math.Max(car.CurrentFloor - 1, car.Settings.MinFloor);
 
         Log.Add($"Car#{car.Id} moved to floor {car.CurrentFloor}");
+
+        if (car.ShouldStopHere(Direction.Down))
+        {
+            car.TransitionToStopped();
+            return;
+        }
 
         if (!car.AnyOnboardBelow())
         {
@@ -35,7 +35,7 @@ internal sealed class MovingDownElevatorState : IElevatorState
                 {
                     car.Direction = Direction.None;
                     car.TransitionToIdle();
-                    Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
+                    Log.Add($"Car#{car.Id} idling at floor pickup == null {car.CurrentFloor}");
                 }
                 else
                 {
@@ -48,7 +48,7 @@ internal sealed class MovingDownElevatorState : IElevatorState
             {
                 car.Direction = Direction.None;
                 car.TransitionToIdle();
-                Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
+                Log.Add($"Car#{car.Id} idling at floor AnyOnboardBelow! {car.CurrentFloor}");
             }
         }
     }

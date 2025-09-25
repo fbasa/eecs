@@ -36,19 +36,12 @@ internal sealed class ElevatorRequestHandler
         }
     }
 
-    public void ClearAt(int floor, Direction direction)
+    public void ClearAt(int floor)
     {
         carUp.Remove(floor);
         carDown.Remove(floor);
-
-        if (direction == Direction.Up)
-        {
-            pickUpUp.Remove(floor);
-        }
-        else if (direction == Direction.Down)
-        {
-            pickUpDown.Remove(floor);
-        }
+        pickUpUp.Remove(floor);
+        pickUpDown.Remove(floor);
     }
 
     public bool HasOnboard() => carUp.Count > 0 || carDown.Count > 0;
@@ -62,8 +55,7 @@ internal sealed class ElevatorRequestHandler
     public bool ShouldStopAt(int floor, Direction moving)
     {
         if (carUp.Contains(floor) || carDown.Contains(floor)) return true;
-        if (moving == Direction.Up && pickUpUp.Contains(floor)) return true;
-        if (moving == Direction.Down && pickUpDown.Contains(floor)) return true;
+        if (pickUpUp.Contains(floor) || pickUpDown.Contains(floor)) return true;
         return false;
     }
 
@@ -107,4 +99,6 @@ internal sealed class ElevatorRequestHandler
         return Direction.None;
     }
 }
+
+
 

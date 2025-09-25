@@ -82,7 +82,7 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            RequestHandler.ClearAt(CurrentFloor, Direction);
+            RequestHandler.ClearAt(CurrentFloor);
         }
     }
 
