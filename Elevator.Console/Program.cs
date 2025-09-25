@@ -19,7 +19,7 @@ await StartDashboardAsync(cts, cars, dispatcher);
 
 
 //-------------------Commands Sample---------------------------------//
-// Ex 1: passenger is in 1st floor and wants to to go down in 9th floor
+// Ex 1: passenger is in 1st floor and wants to go down in 9th floor
 // u 1     -> call for "Up", say car 2 (nearest) will go down to 1st floor for pickup, if car 2 is in 6th floor, 5 x 10s = 50s waiting time
 // c 2 9   -> next, instruct car 2 to go to 9th floor
 //

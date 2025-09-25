@@ -5,7 +5,6 @@ internal sealed class ElevatorOptions
     public int MaxFloor => 10;
     public TimeSpan TravelPerFloor => TimeSpan.FromSeconds(10);
     public TimeSpan Dwell => TimeSpan.FromSeconds(10);
-
     public static ElevatorOptions Default { get; } = new();
 }
 
