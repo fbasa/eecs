@@ -23,7 +23,9 @@ public sealed class Dispatcher(Elevator[] cars)
     public void Dispatch()
     {
         if (pending.Count == 0) return;
+
         var assigned = new List<(int floor, Direction direction)>();
+
         foreach (var p in pending)
         {
             var (i, _) = cars
