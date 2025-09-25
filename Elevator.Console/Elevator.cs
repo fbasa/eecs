@@ -2,7 +2,6 @@ public sealed class Elevator
 {    
     public readonly int Id;
 
-
     public int CurrentFloor { get; internal set; }
 
     public Direction Direction { get; internal set; } = Direction.None;
