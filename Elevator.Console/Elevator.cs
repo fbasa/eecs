@@ -20,6 +20,7 @@ public sealed class Elevator
     private readonly Lock _lock = new();
 
     private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
+
     public Elevator(int id, int startFloor)
     {
         Id = id;
@@ -223,13 +224,6 @@ public sealed class Elevator
 
     public string Snapshot()
     {
-        using (_lock.EnterScope())
-        {
-            string cu = string.Join(",", carUp);
-            string cd = string.Join(",", carDown.Reverse());
-            string pu = string.Join(",", pickUpUp);
-            string pd = string.Join(",", pickUpDown.Reverse());
-            return $"Car#{Id} F={CurrentFloor} {StateName} Dir={Direction} | Onboard(U:{cu} D:{cd}) Pickups(U:{pu} D:{pd})";
-        }
+        return $"Car#{Id} Floor={CurrentFloor} Direction={StateName}";
     }
 }

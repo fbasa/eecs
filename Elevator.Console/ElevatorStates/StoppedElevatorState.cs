@@ -4,9 +4,7 @@ internal sealed class StoppedElevatorState : IElevatorState
 
     public string Name => "Stopped";
 
-    private StoppedElevatorState()
-    {
-    }
+    private StoppedElevatorState() { }
 
     public async Task HandleStateAsync(Elevator car, CancellationToken token)
     {

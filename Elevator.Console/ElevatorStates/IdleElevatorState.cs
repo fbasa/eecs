@@ -4,9 +4,7 @@ internal sealed class IdleElevatorState : IElevatorState
 
     public string Name => "Idle";
 
-    private IdleElevatorState()
-    {
-    }
+    private IdleElevatorState() { }
 
     public Task HandleStateAsync(Elevator elevator, CancellationToken token)
     {
