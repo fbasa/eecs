@@ -1,27 +1,20 @@
 public sealed class Elevator
-{
+{    
     public readonly int Id;
-    public const int MinFloor = 1, MaxFloor = 10;
-    public int CurrentFloor { get; internal set; }
 
-    public readonly TimeSpan TravelPerFloor = TimeSpan.FromSeconds(10);
-    public readonly TimeSpan Dwell = TimeSpan.FromSeconds(10);
+
+    public int CurrentFloor { get; internal set; }
 
     public Direction Direction { get; internal set; } = Direction.None;
     internal IElevatorState CurrentState { get; private set; }
-    public string StateName => CurrentState.Name;
-
-    private readonly SortedSet<int> carUp = new();    // > CurrentFloor
-    private readonly SortedSet<int> carDown = new();  // < CurrentFloor
-
-    private readonly SortedSet<int> pickUpUp = new();
-    private readonly SortedSet<int> pickUpDown = new();
+    internal ElevatorOptions Settings => ElevatorOptions.Default;
+    private readonly ElevatorStops stops = new();
 
     private readonly Lock _lock = new();
 
     private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
 
-    public Elevator(int id, int startFloor)
+     public Elevator(int id, int startFloor)
     {
         Id = id;
         CurrentFloor = startFloor;
@@ -34,20 +27,9 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            if (floor > CurrentFloor)
-            {
-                carUp.Add(floor);
-            }
-            else if (floor < CurrentFloor)
-            {
-                carDown.Add(floor);
-            }
-            else
-            {
-                carUp.Add(floor); // immediate stop case
-            }
+            stops.AddOnboard(floor, CurrentFloor);
 
-            Log.Add($"Car#{Id}: destination {floor} added");
+            Log.Add($"Car#{Id} destination {floor} added");
 
             if (IsIdle)
             {
@@ -66,23 +48,17 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            if (direction == Direction.Up)
-            {
-                pickUpUp.Add(floor);
-            }
-            else if (direction == Direction.Down)
-            {
-                pickUpDown.Add(floor);
-            }
-            else
+            if (direction == Direction.None)
             {
                 Log.Add($"Car has no direction.");
                 return;
             }
-            
+
+            stops.AddPickup(floor, direction);
+
             Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(direction == Direction.Up ? "Up" : "Down")})");
 
-            if (IsIdle && !HasOnboardLocked())
+            if (IsIdle && !HasOnboardRequests())
             {
                 Direction = floor >= CurrentFloor ? Direction.Up : Direction.Down;
                 TransitionTo(Direction);
@@ -95,9 +71,7 @@ public sealed class Elevator
     {
         if (ct.IsCancellationRequested) return;
 
-        if (IsIdle && !HasOnboardLocked() 
-            && (pickUpUp.Count > 0 || pickUpDown.Count > 0)
-            )
+        if (IsIdle && !HasOnboardRequests() && stops.HasPickups())
         {
             var target = NearestPickup();
             Direction = target > CurrentFloor ? Direction.Up : Direction.Down;
@@ -112,14 +86,7 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            carUp.Remove(CurrentFloor);
-            carDown.Remove(CurrentFloor);
-
-            if (Direction == Direction.Up) 
-                pickUpUp.Remove(CurrentFloor);
-
-            if (Direction == Direction.Down) 
-                pickUpDown.Remove(CurrentFloor);
+            stops.ClearAt(CurrentFloor, Direction);
         }
     }
 
@@ -127,35 +94,7 @@ public sealed class Elevator
     {
         using (_lock.EnterScope())
         {
-            var nextDirection = Direction.None;
-
-            var onboardAbove = AnyOnboardAbove();
-            var onboardBelow = AnyOnboardBelow();
-
-            if (Direction == Direction.Up && onboardAbove)
-            {
-                nextDirection = Direction.Up;
-            }
-            else if (Direction == Direction.Down && onboardBelow)
-            {
-                nextDirection = Direction.Down;
-            }
-            else if (onboardAbove)
-            {
-                nextDirection = Direction.Up;
-            }
-            else if (onboardBelow)
-            {
-                nextDirection = Direction.Down;
-            }
-            else
-            {
-                var pickup = NearestPickup();
-                if (pickup != null)
-                {
-                    nextDirection = pickup > CurrentFloor ? Direction.Up : Direction.Down;
-                }
-            }
+            var nextDirection = stops.DetermineNextDirection(Direction, CurrentFloor);
 
             Direction = nextDirection;
             TransitionTo(nextDirection);
@@ -189,41 +128,25 @@ public sealed class Elevator
 
 
     // Helpers
-    private bool HasOnboardLocked() => carUp.Count > 0 || carDown.Count > 0;
-    internal bool AnyOnboardAbove() => carUp.Count > 0 && carUp.Min > CurrentFloor;
-    internal bool AnyOnboardBelow() => carDown.Count > 0 && carDown.Max() < CurrentFloor;
-    internal bool HasPickups() => pickUpUp.Count > 0 || pickUpDown.Count > 0;
+    private bool HasOnboardRequests() => stops.HasOnboard();
+    internal bool AnyOnboardAbove() => stops.AnyOnboardAbove(CurrentFloor);
+    internal bool AnyOnboardBelow() => stops.AnyOnboardBelow(CurrentFloor);
+    internal bool HasPickups() => stops.HasPickups();
 
     internal bool ShouldStopHere(Direction moving)
     {
         using (_lock.EnterScope())
         {
-            if (carUp.Contains(CurrentFloor) || carDown.Contains(CurrentFloor)) return true;
-            if (moving == Direction.Up && pickUpUp.Contains(CurrentFloor)) return true;
-            if (moving == Direction.Down && pickUpDown.Contains(CurrentFloor)) return true;
-            return false;
+            return stops.ShouldStopAt(CurrentFloor, moving);
         }
     }
 
-    private int? NearestOnboard()
-    {
-        int? cUp = carUp.Count > 0 ? carUp.OrderBy(f => Math.Abs(f - CurrentFloor)).First() : null;
-        int? cDn = carDown.Count > 0 ? carDown.OrderBy(f => Math.Abs(f - CurrentFloor)).First() : null;
-        if (cUp is null) return cDn;
-        if (cDn is null) return cUp;
-        return Math.Abs(cUp.Value - CurrentFloor) <= Math.Abs(cDn.Value - CurrentFloor) ? cUp : cDn;
-    }
+    private int? NearestOnboard() => stops.NearestOnboard(CurrentFloor);
 
-    internal int? NearestPickup()
-    {
-        var ups = pickUpUp.Select(f => (f, Math.Abs(f - CurrentFloor)));
-        var dns = pickUpDown.Select(f => (f, Math.Abs(f - CurrentFloor)));
-        var all = ups.Concat(dns).OrderBy(t => t.Item2).ToList();
-        return all.Count > 0 ? all[0].f : (int?)null;
-    }
+    internal int? NearestPickup() => stops.NearestPickup(CurrentFloor);
 
     public string Snapshot()
     {
-        return $"Car#{Id} Floor={CurrentFloor} Direction={StateName}";
+        return $"Car#{Id} Floor={CurrentFloor} Direction={CurrentState.Name}";
     }
 }

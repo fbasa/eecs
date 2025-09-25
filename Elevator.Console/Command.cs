@@ -4,6 +4,8 @@ public static class Command
     {
         try
         {
+            var settings = ElevatorOptions.Default;
+
             var parts = (line ?? string.Empty).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             if (parts.Length == 0) return;
@@ -21,9 +23,9 @@ public static class Command
 
                     if (!TryParseInt(parts[1], "floor", out var upFloor)) break;
 
-                    if (upFloor < Elevator.MinFloor || upFloor > Elevator.MaxFloor)
+                    if (upFloor < settings.MinFloor || upFloor > settings.MaxFloor)
                     {
-                        Log.Add($"Floor {upFloor} is out of range for up requests ({Elevator.MinFloor}-{Elevator.MaxFloor - 1}).");
+                        Log.Add($"Floor {upFloor} is out of range for up requests (1-10).");
                         break;
                     }
 
@@ -39,9 +41,9 @@ public static class Command
 
                     if (!TryParseInt(parts[1], "floor", out var downFloor)) break;
 
-                    if (downFloor <= Elevator.MinFloor || downFloor > Elevator.MaxFloor)
+                    if (downFloor <= settings.MinFloor || downFloor > settings.MaxFloor)
                     {
-                        Log.Add($"Floor {downFloor} is out of range for down requests ({Elevator.MinFloor + 1}-{Elevator.MaxFloor}).");
+                        Log.Add($"Floor {downFloor} is out of range for down requests (2-10).");
                         break;
                     }
 
@@ -64,9 +66,9 @@ public static class Command
                         break;
                     }
 
-                    if (target < Elevator.MinFloor || target > Elevator.MaxFloor)
+                    if (target < settings.MinFloor || target > settings.MaxFloor)
                     {
-                        Log.Add($"Floor {target} is out of range ({Elevator.MinFloor}-{Elevator.MaxFloor}).");
+                        Log.Add($"Floor {target} is out of range (1-10).");
                         break;
                     }
 

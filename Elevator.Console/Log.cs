@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-// ---------------- Logging ----------------
+
 public static class Log
 {
     private static readonly ConcurrentQueue<string> _q = new();

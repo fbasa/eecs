@@ -14,9 +14,9 @@ internal sealed class MovingUpElevatorState : IElevatorState
             return;
         }
 
-        await Task.Delay(car.TravelPerFloor, token);
+        await Task.Delay(car.Settings.TravelPerFloor, token);
 
-        car.CurrentFloor = Math.Min(car.CurrentFloor + 1, Elevator.MaxFloor);
+        car.CurrentFloor = Math.Min(car.CurrentFloor + 1, car.Settings.MaxFloor);
 
         Log.Add($"Car#{car.Id} moved to floor {car.CurrentFloor}");
 
