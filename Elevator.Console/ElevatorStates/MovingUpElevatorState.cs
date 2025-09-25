@@ -8,6 +8,12 @@ internal sealed class MovingUpElevatorState : IElevatorState
 
     public async Task HandleStateAsync(Elevator car, CancellationToken token)
     {
+        if (car.ShouldStopHere(Direction.Up))
+        {
+            car.TransitionToStopped();
+            return;
+        }
+
         await Task.Delay(car.TravelPerFloor, token);
 
         car.CurrentFloor = Math.Min(car.CurrentFloor + 1, Elevator.MaxFloor);
@@ -53,3 +59,4 @@ internal sealed class MovingUpElevatorState : IElevatorState
         }
     }
 }
+
