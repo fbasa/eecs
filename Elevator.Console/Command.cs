@@ -1,6 +1,6 @@
 public static class Command
 {
-    public static void Validate(string? line, Dispatcher dispatcher)
+    public static void Handle(string? line, Dispatcher dispatcher)
     {
         try
         {
@@ -29,7 +29,7 @@ public static class Command
                         break;
                     }
 
-                    dispatcher.Move(upFloor, Direction.Up);
+                    dispatcher.RequestPickup(upFloor, Direction.Up);
                     break;
 
                 case "d":
@@ -47,7 +47,7 @@ public static class Command
                         break;
                     }
 
-                    dispatcher.Move(downFloor,Direction.Down);
+                    dispatcher.RequestPickup(downFloor,Direction.Down);
                     break;
 
                 case "c":

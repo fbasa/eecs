@@ -2,7 +2,7 @@ public sealed class Dispatcher(Elevator[] cars)
 {
     private readonly HashSet<(int floor, Direction direction)> pending = new();
 
-    public void Move(int floor, Direction direction)
+    public void RequestPickup(int floor, Direction direction)
     {
         pending.Add((floor, direction));
         var label = direction == Direction.Up ? "UP" : "DOWN";

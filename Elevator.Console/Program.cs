@@ -88,7 +88,7 @@ static async Task StartDashboardAsync(CancellationTokenSource cts, Elevator[] ca
             {
                 var line = Console.ReadLine();
                 if (line == null) break;
-                Command.Validate(line, dispatcher);
+                Command.Handle(line, dispatcher);
                 break;
             }
             await Task.Delay(50, cts.Token);
