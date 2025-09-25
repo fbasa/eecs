@@ -20,12 +20,6 @@ internal sealed class MovingUpElevatorState : IElevatorState
 
         Log.Add($"Car#{car.Id} moved to floor {car.CurrentFloor}");
 
-        if (car.ShouldStopHere(Direction.Up))
-        {
-            car.TransitionToStopped();
-            return;
-        }
-
         if (!car.AnyOnboardAbove())
         {
             if (car.AnyOnboardBelow())

@@ -2,7 +2,7 @@
 
 var cars = new[]
 {
-    new Elevator(1, 8),
+    new Elevator(1, 2),
     new Elevator(2, 6),
     new Elevator(3, 7),
     new Elevator(4, 9),
