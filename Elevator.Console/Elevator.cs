@@ -19,6 +19,9 @@ public sealed class Elevator
         Log.Add($"Car#{Id} initialized at floor {CurrentFloor}");
     }
 
+    /// <summary>
+    /// Adds an onboard destination and kicks the car out of idle if needed to head toward it.
+    /// </summary>
     public void CarSelect(int floor)
     {
         using (_lock.EnterScope())
@@ -40,6 +43,9 @@ public sealed class Elevator
         }
     }
 
+    /// <summary>
+    /// Registers a hallway pickup and, if idle with no onboard riders, moves toward it.
+    /// </summary>
     public void AssignPickup(int floor, Direction direction)
     {
         using (_lock.EnterScope())
@@ -60,7 +66,12 @@ public sealed class Elevator
         }
     }
 
-    public async Task HandleStateAsync(CancellationToken ct)
+    /// <summary>
+    /// Advancing the car one step and triggering state transitions
+    /// </summary>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    public async Task AdvanceAsync(CancellationToken ct)
     {
         if (ct.IsCancellationRequested) return;
 

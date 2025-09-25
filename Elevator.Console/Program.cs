@@ -49,7 +49,7 @@ static void StartElevators(CancellationTokenSource cts, Elevator[] cars)
         {
             while (!cts.IsCancellationRequested)
             {
-                await car.HandleStateAsync(cts.Token);
+                await car.AdvanceAsync(cts.Token);
             }
         });
     }

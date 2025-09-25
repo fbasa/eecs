@@ -1,10 +1,15 @@
 public sealed class Dispatcher(Elevator[] cars)
 {
-    private readonly HashSet<(int floor, Direction direction)> pending = new();
+    private readonly HashSet<(int floor, Direction direction)> pickupRequests = new();
 
+    /// <summary>
+    ///  Record a hall-call so it can be assigned later or dispatch
+    /// </summary>
+    /// <param name="floor"></param>
+    /// <param name="direction"></param>
     public void RequestPickup(int floor, Direction direction)
     {
-        pending.Add((floor, direction));
+        pickupRequests.Add((floor, direction));
         var label = direction == Direction.Up ? "UP" : "DOWN";
         Log.Add($"{label} request on floor {floor} received");
     }
@@ -20,28 +25,31 @@ public sealed class Dispatcher(Elevator[] cars)
 
     public bool HasCar(int carId) => cars.Any(c => c.Id == carId);
 
+    /// <summary>
+    /// Assigns each pending pickup request to the closest car and clears the request once dispatched.
+    /// </summary>
     public void Dispatch()
     {
-        if (pending.Count == 0) return;
+        if (pickupRequests.Count == 0) return;
 
         var assigned = new List<(int floor, Direction direction)>();
 
-        foreach (var p in pending)
+        foreach (var request in pickupRequests)
         {
             var (i, _) = cars
-                .Select((car, i) => (i, score: Math.Abs(car.CurrentFloor - p.floor)))
+                .Select((car, i) => (i, score: Math.Abs(car.CurrentFloor - request.floor)))
                 .OrderBy(t => t.score).First();
 
-            cars[i].AssignPickup(p.floor, p.direction);
+            cars[i].AssignPickup(request.floor, request.direction);
 
-            var label = p.direction == Direction.Up ? "UP" : "DOWN";
-            Log.Add($"Assigned floor {p.floor} ({label}) to Car#{cars[i].Id}");
-            assigned.Add(p);
+            var label = request.direction == Direction.Up ? "UP" : "DOWN";
+            Log.Add($"Assigned floor {request.floor} ({label}) to Car#{cars[i].Id}");
+            assigned.Add(request);
         }
 
-        foreach (var a in assigned)
+        foreach (var req in assigned)
         {
-            pending.Remove(a);
+            pickupRequests.Remove(req);
         }
     }
 }

@@ -1,5 +1,10 @@
 public static class Command
 {
+    /// <summary>
+    /// Sanity-check—it and parses input, routes it to the proper dispatcher actions
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="dispatcher"></param>
     public static void Handle(string? line, Dispatcher dispatcher)
     {
         try

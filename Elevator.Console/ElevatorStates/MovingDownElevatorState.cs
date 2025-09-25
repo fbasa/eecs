@@ -6,6 +6,12 @@ internal sealed class MovingDownElevatorState : IElevatorState
 
     private MovingDownElevatorState() { }
 
+    /// <summary>
+    /// Advances the elevator through one asynchronous step while the state is active.
+    /// </summary>
+    /// <param name="car"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     public async Task HandleStateAsync(Elevator car, CancellationToken token)
     {
         // Simulate travel (cancellable)
