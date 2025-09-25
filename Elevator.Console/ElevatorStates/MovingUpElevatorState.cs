@@ -31,25 +31,28 @@ internal sealed class MovingUpElevatorState : IElevatorState
             else if (car.HasPickups())
             {
                 var pickup = car.NearestPickup();
-                if (pickup == null)
-                {
-                    car.Direction = Direction.None;
-                    car.TransitionToIdle();
-                    Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
-                }
-                else
+                if (pickup != null)
                 {
                     car.Direction = pickup > car.CurrentFloor ? Direction.Up : Direction.Down;
                     car.TransitionTo(car.Direction);
                 }
+                else
+                {
+                    SetCarToIdle(car);
+                }
             }
             else
             {
-                car.Direction = Direction.None;
-                car.TransitionToIdle();
-                Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
+                SetCarToIdle(car);
             }
         }
+    }
+
+    private static void SetCarToIdle(Elevator car)
+    {
+        car.Direction = Direction.None;
+        car.TransitionToIdle();
+        Log.Add($"Car#{car.Id} idling at floor {car.CurrentFloor}");
     }
 }
 
