@@ -47,7 +47,7 @@ internal sealed class MovingUpElevatorState : IElevatorState
                 {
                     car.Direction = pickup > car.CurrentFloor ? Direction.Up : Direction.Down;
                     car.TransitionTo(car.Direction);
-                    Log.Add($"Car#{car.Id} heading {car.Direction} toward pickup at floor {pickup}");
+                    //Log.Add($"Car#{car.Id} heading {car.Direction} toward pickup at floor {pickup}");
                 }
             }
             else

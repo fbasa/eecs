@@ -52,13 +52,13 @@ public sealed class Elevator
 
             RequestHandler.AddPickup(floor, direction);
 
-            Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(direction == Direction.Up ? "Up" : "Down")})");
+            //Log.Add($"Car#{Id} assigned pickup at floor {floor} ({(direction == Direction.Up ? "Up" : "Down")})");
 
             if (IsIdle && !RequestHandler.HasOnboard())
             {
                 Direction = floor >= CurrentFloor ? Direction.Up : Direction.Down;
                 TransitionTo(Direction);
-                Log.Add($"Car#{Id} heading {Direction} toward pickup at floor {floor}");
+                //Log.Add($"Car#{Id} heading {Direction} toward pickup at floor {floor}");
             }
         }
     }
