@@ -12,6 +12,15 @@ public static class Log
         while (_q.Count > Max && _q.TryDequeue(out _)) { }
     }
 
+    /// <summary>
+    /// Lets callers read the most recent log entries. 
+    /// It walks the in-memory queue in reverse so it can pull the latest n items, 
+    /// then reverses again before returning, 
+    /// ensuring you get the newest lines in chronological 
+    /// order without mutating or dequeuing them.
+    /// </summary>
+    /// <param name="n"></param>
+    /// <returns></returns>
     public static IEnumerable<string> Tail(int n)
     {
         return _q.Reverse().Take(n).Reverse();

@@ -6,7 +6,7 @@ public sealed class Elevator
     internal IElevatorState CurrentState { get; private set; }
     internal ElevatorOptions Settings => ElevatorOptions.Default;
     private readonly ElevatorRequestHandler RequestHandler = new();
-    private readonly Lock _lock = new();
+    //private readonly Lock _lock = new();
     private bool IsIdle => ReferenceEquals(CurrentState, IdleElevatorState.Instance);
 
     public Elevator(int id, int startFloor)
@@ -23,8 +23,8 @@ public sealed class Elevator
     /// </summary>
     public void CarSelect(int floor)
     {
-        using (_lock.EnterScope())
-        {
+        //using (_lock.EnterScope())
+        //{
             RequestHandler.AddOnboard(floor, CurrentFloor);
 
             Log.Add($"Car#{Id} destination (floor {floor}) added");
@@ -39,7 +39,7 @@ public sealed class Elevator
                     Log.Add($"Car#{Id} starting to move {Direction} from floor {CurrentFloor}");
                 }
             }
-        }
+        //}
     }
 
     /// <summary>
@@ -47,8 +47,8 @@ public sealed class Elevator
     /// </summary>
     public void AssignPickup(int floor, Direction direction)
     {
-        using (_lock.EnterScope())
-        {
+        //using (_lock.EnterScope())
+        //{
             if (direction == Direction.None)
             {
                 Log.Add("Car has no direction.");
@@ -62,7 +62,7 @@ public sealed class Elevator
                 Direction = floor >= CurrentFloor ? Direction.Up : Direction.Down;
                 TransitionTo(Direction);
             }
-        }
+        //}
     }
 
     /// <summary>
@@ -88,21 +88,21 @@ public sealed class Elevator
 
     internal void ClearCurrentFloorRequests()
     {
-        using (_lock.EnterScope())
-        {
+        //using (_lock.EnterScope())
+        //{
             RequestHandler.ClearAt(CurrentFloor);
-        }
+        //}
     }
 
     internal void DeterminePostStopState()
     {
-        using (_lock.EnterScope())
-        {
+        //using (_lock.EnterScope())
+        //{
             var nextDirection = RequestHandler.DetermineNextDirection(Direction, CurrentFloor);
 
             Direction = nextDirection;
             TransitionTo(nextDirection);
-        }
+        //}
     }
 
     internal void TransitionTo(Direction direction)
@@ -132,10 +132,10 @@ public sealed class Elevator
 
     internal bool ShouldStopHere(Direction moving)
     {
-        using (_lock.EnterScope())
-        {
+        //using (_lock.EnterScope())
+        //{
             return RequestHandler.ShouldStopAt(CurrentFloor, moving);
-        }
+        //}
     }
 
     public string Snapshot()

@@ -36,14 +36,15 @@ public sealed class Dispatcher(Elevator[] cars)
 
         foreach (var request in pickupRequests)
         {
-            var (i, _) = cars
-                .Select((car, i) => (i, distance: Math.Abs(car.CurrentFloor - request.floor)))
+            var (car, _) = cars
+                .Where(car => car.CurrentState.Name == IdleElevatorState.Instance.Name)
+                .Select((car, i) => (car, distance: Math.Abs(car.CurrentFloor - request.floor)))
                 .OrderBy(t => t.distance).First();
 
-            cars[i].AssignPickup(request.floor, request.direction);
+            car.AssignPickup(request.floor, request.direction);
 
             var label = request.direction == Direction.Up ? "UP" : "DOWN";
-            Log.Add($"Assigned floor {request.floor} ({label}) to Car#{cars[i].Id}");
+            Log.Add($"Assigned floor {request.floor} ({label}) to Car#{car.Id}");
             assigned.Add(request);
         }
 

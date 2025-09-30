@@ -28,6 +28,10 @@ await StartDashboardAsync(cts, cars, dispatcher);
 // Ex 2: passenger is in 10th floor and wants to go down in 5th floor
 // d 10     -> hall-call for "Down", say car 4 (nearest) will go up to 10th floor for pickup
 // c 4 5    -> next, instruct car 4 to go to 5th floor
+//
+// u 1
+// d 3
+// c 2 9
 //-------------------------------------------------------------------//
 
 static void StartDispatcher(CancellationTokenSource cts, Dispatcher dispatcher)
@@ -37,7 +41,7 @@ static void StartDispatcher(CancellationTokenSource cts, Dispatcher dispatcher)
         while (!cts.IsCancellationRequested)
         {
             dispatcher.Dispatch();
-            await Task.Delay(250, cts.Token);
+            await Task.Delay(5000, cts.Token);
         }
     });
 }

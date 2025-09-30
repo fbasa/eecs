@@ -5,6 +5,7 @@ internal sealed class ElevatorRequestHandler
 {
     private readonly SortedSet<int> carUp = new();
     private readonly SortedSet<int> carDown = new();
+
     private readonly SortedSet<int> pickUpUp = new();
     private readonly SortedSet<int> pickUpDown = new();
 
@@ -48,11 +49,11 @@ internal sealed class ElevatorRequestHandler
     public bool HasOnboard() => carUp.Count > 0 || carDown.Count > 0;
     public bool HasPickups() => pickUpUp.Count > 0 || pickUpDown.Count > 0;
 
-    public bool AnyOnboardAbove(int currentFloor) => HasAbove(carUp, currentFloor);
-    public bool AnyOnboardBelow(int currentFloor) => HasBelow(carDown, currentFloor);
+    internal bool AnyOnboardAbove(int currentFloor) => HasAbove(carUp, currentFloor);
+    internal bool AnyOnboardBelow(int currentFloor) => HasBelow(carDown, currentFloor);
 
-    public bool HasPickupAbove(int currentFloor) => HasAbove(pickUpUp, currentFloor) || HasAbove(pickUpDown, currentFloor);
-    public bool HasPickupBelow(int currentFloor) => HasBelow(pickUpUp, currentFloor) || HasBelow(pickUpDown, currentFloor);
+    internal bool HasPickupAbove(int currentFloor) => HasAbove(pickUpUp, currentFloor) || HasAbove(pickUpDown, currentFloor);
+    internal bool HasPickupBelow(int currentFloor) => HasBelow(pickUpUp, currentFloor) || HasBelow(pickUpDown, currentFloor);
 
     public bool HasTargetsAbove(int currentFloor) => AnyOnboardAbove(currentFloor) || HasPickupAbove(currentFloor);
     public bool HasTargetsBelow(int currentFloor) => AnyOnboardBelow(currentFloor) || HasPickupBelow(currentFloor);
