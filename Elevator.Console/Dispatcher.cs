@@ -1,3 +1,5 @@
+using System.Reflection.Emit;
+
 public sealed class Dispatcher(Elevator[] cars)
 {
     private readonly HashSet<(int floor, Direction direction)> pickupRequests = new();
@@ -37,15 +39,25 @@ public sealed class Dispatcher(Elevator[] cars)
         foreach (var request in pickupRequests)
         {
             var (car, _) = cars
-                .Where(car => car.CurrentState.Name == IdleElevatorState.Instance.Name)
+                .Where(car => car.CurrentState == IdleElevatorState.Instance)
                 .Select((car, i) => (car, distance: Math.Abs(car.CurrentFloor - request.floor)))
-                .OrderBy(t => t.distance).First();
+                .OrderBy(t => t.distance).FirstOrDefault();
 
-            car.AssignPickup(request.floor, request.direction);
+            if (car is null)
+            {
+                (car, _) = cars
+                    .Select((car, i) => (car, distance: Math.Abs(car.CurrentFloor - request.floor)))
+                    .OrderBy(t => t.distance).First();
+            }
 
-            var label = request.direction == Direction.Up ? "UP" : "DOWN";
-            Log.Add($"Assigned floor {request.floor} ({label}) to Car#{car.Id}");
-            assigned.Add(request);
+            if (car is not null)
+            {
+                car.AssignPickup(request.floor, request.direction);
+
+                var label = request.direction == Direction.Up ? "UP" : "DOWN";
+                Log.Add($"Assigned floor {request.floor} ({label}) to Car#{car.Id}");
+                assigned.Add(request);
+            }
         }
 
         foreach (var req in assigned)
